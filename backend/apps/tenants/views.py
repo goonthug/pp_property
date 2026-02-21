@@ -1,8 +1,11 @@
 import calendar
 from datetime import date, timedelta
+from decimal import Decimal
 from django.db import transaction
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 
@@ -10,7 +13,7 @@ from .models import Tenant, Contract, RentalApplication
 from .serializers import TenantSerializer, ContractSerializer, RentalApplicationSerializer
 from apps.users.permissions import IsAdminOrManager
 from apps.audit.mixins import AuditMixin
-from apps.properties.models import Property
+from apps.properties.models import Property, PropertyStatus
 from apps.payments.models import Payment, PaymentCategory
 
 
@@ -68,6 +71,15 @@ class RentalApplicationViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
+    def update(self, request, *args, **kwargs):
+        try:
+            return super().update(request, *args, **kwargs)
+        except Exception as e:
+            return Response(
+                {"detail": str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
     def perform_update(self, serializer):
         instance = serializer.instance
         old_status = instance.status
@@ -77,39 +89,45 @@ class RentalApplicationViewSet(viewsets.ModelViewSet):
             if new_status != RentalApplication.Status.APPROVED or old_status == RentalApplication.Status.APPROVED:
                 return
             app = serializer.instance
-            start = app.desired_start or date.today()
-            end = app.desired_end or (start + timedelta(days=365))
+            start = getattr(app, "desired_start", None) or date.today()
+            end = getattr(app, "desired_end", None) or (start + timedelta(days=365))
+            if not isinstance(start, date):
+                start = date.today()
+            if not isinstance(end, date):
+                end = start + timedelta(days=365)
             if end <= start:
                 end = start + timedelta(days=365)
             tenant, _ = Tenant.objects.get_or_create(user=app.user, defaults={"status": "active"})
             if Contract.objects.filter(tenant=tenant, property=app.property, status=Contract.Status.ACTIVE).exists():
                 return
+            monthly_rent = app.property.monthly_rent
+            if monthly_rent is None:
+                monthly_rent = Decimal("0")
             contract = Contract.objects.create(
                 tenant=tenant,
                 property=app.property,
                 start_date=start,
                 end_date=end,
-                monthly_rent=app.property.monthly_rent,
+                monthly_rent=monthly_rent,
                 status=Contract.Status.ACTIVE,
             )
-            app.property.status = Property.Status.RENTED
+            app.property.status = PropertyStatus.RENTED
             app.property.save(update_fields=["status"])
             cat, _ = PaymentCategory.objects.get_or_create(name="Аренда", defaults={"description": "Арендная плата"})
             cur = start.replace(day=1)
             while cur <= end:
-                due = cur
-                if due < start:
-                    due = start
+                due = cur if cur >= start else start
                 Payment.objects.get_or_create(
                     contract=contract,
                     category=cat,
                     period_month=cur.month,
                     period_year=cur.year,
                     defaults={
-                        "amount": app.property.monthly_rent,
+                        "amount": monthly_rent,
                         "status": "pending",
                         "due_date": due,
                     },
                 )
-                _, last = calendar.monthrange(cur.year, cur.month)
-                cur = (cur.replace(day=last) + timedelta(days=1)).replace(day=1)
+                _, last_day = calendar.monthrange(cur.year, cur.month)
+                next_first = (cur.replace(day=last_day) + timedelta(days=1))
+                cur = next_first.replace(day=1)

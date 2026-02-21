@@ -34,7 +34,7 @@ class PropertyViewSet(AuditMixin, viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = super().get_queryset()
-        if self.request.user.role in ("admin", "manager") and self.action in ("list", "retrieve"):
+        if self.action in ("list", "retrieve"):
             today = timezone.now().date()
             active_contract = Contract.objects.filter(
                 property=OuterRef("pk"),

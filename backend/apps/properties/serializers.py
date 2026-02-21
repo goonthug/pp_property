@@ -33,8 +33,9 @@ class PropertySerializer(serializers.ModelSerializer):
 
     def get_rental_status_display(self, obj):
         request = self.context.get("request")
-        if request and request.user.role in ("admin", "manager"):
-            if getattr(obj, "has_active_contract", False):
+        if request and getattr(request.user, "role", None) in ("admin", "manager"):
+            val = getattr(obj, "has_active_contract", False)
+            if val is True or (isinstance(val, int) and val != 0):
                 return "Арендовано"
             return "Свободно"
         return "Свободно"
