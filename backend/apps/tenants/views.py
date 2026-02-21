@@ -3,8 +3,8 @@ from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 
-from .models import Tenant, Contract
-from .serializers import TenantSerializer, ContractSerializer
+from .models import Tenant, Contract, RentalApplication
+from .serializers import TenantSerializer, ContractSerializer, RentalApplicationSerializer
 from apps.users.permissions import IsAdminOrManager
 from apps.audit.mixins import AuditMixin
 
@@ -41,3 +41,24 @@ class ContractViewSet(AuditMixin, viewsets.ModelViewSet):
         if self.request.user.role == "tenant":
             qs = qs.filter(tenant__user=self.request.user)
         return qs
+
+
+class RentalApplicationViewSet(viewsets.ModelViewSet):
+    queryset           = RentalApplication.objects.select_related("user", "property")
+    serializer_class   = RentalApplicationSerializer
+    filter_backends    = [DjangoFilterBackend]
+    filterset_fields   = ["status", "property"]
+
+    def get_permissions(self):
+        if self.action in ["list", "retrieve", "create"]:
+            return [IsAuthenticated()]
+        return [IsAdminOrManager()]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        if self.request.user.role == "tenant":
+            qs = qs.filter(user=self.request.user)
+        return qs
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)

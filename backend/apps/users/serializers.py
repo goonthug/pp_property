@@ -13,6 +13,14 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token["full_name"] = user.get_full_name()
         return token
 
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        if not self.user.is_active:
+            reason = getattr(self.user, "block_reason", None) or "Аккаунт заблокирован администратором."
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError({"detail": reason})
+        return data
+
 
 class UserSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
@@ -21,7 +29,7 @@ class UserSerializer(serializers.ModelSerializer):
         model  = User
         fields = ["id", "email", "username", "first_name", "last_name",
                   "full_name", "role", "phone", "avatar", "is_active",
-                  "created_at", "updated_at"]
+                  "block_reason", "created_at", "updated_at"]
         read_only_fields = ["created_at", "updated_at"]
 
     def get_full_name(self, obj):
@@ -43,7 +51,11 @@ class UserCreateSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        return User.objects.create_user(**validated_data)
+        user = User.objects.create_user(**validated_data)
+        if user.role == "tenant":
+            from apps.tenants.models import Tenant
+            Tenant.objects.get_or_create(user=user, defaults={"status": "active"})
+        return user
 
 
 class ChangePasswordSerializer(serializers.Serializer):

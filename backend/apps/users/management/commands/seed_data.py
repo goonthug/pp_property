@@ -76,7 +76,7 @@ class Command(BaseCommand):
                 tenant=tenant, property=prop, start_date=start, end_date=end,
                 monthly_rent=prop.monthly_rent, deposit=prop.monthly_rent*2, status="active")
 
-            # Платежи за 6 месяцев
+            # Платежи за 6 месяцев 2024
             for m in range(6):
                 month = (6 + m - 1) % 12 + 1
                 year  = 2024 + (6 + m - 1) // 12
@@ -87,6 +87,15 @@ class Command(BaseCommand):
                     due_date=date(year, month, 10),
                     paid_date=date(year, month, 9) if is_paid else None,
                     period_month=month, period_year=year)
+            # Платежи за 2025 год (январь - июнь)
+            for month in range(1, 7):
+                is_paid = month <= 3
+                Payment.objects.create(
+                    contract=contract, category=rent_cat, amount=prop.monthly_rent,
+                    status="paid" if is_paid else "pending",
+                    due_date=date(2025, month, 10),
+                    paid_date=date(2025, month, 9) if is_paid else None,
+                    period_month=month, period_year=2025)
 
         # Категории заявок
         cats = [RequestCategory.objects.create(name=n)

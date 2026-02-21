@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from apps.users.serializers import UserSerializer
-from .models import Tenant, Contract
+from .models import Tenant, Contract, RentalApplication
 
 
 class TenantSerializer(serializers.ModelSerializer):
@@ -15,6 +15,18 @@ class TenantSerializer(serializers.ModelSerializer):
         fields = ["id", "user", "user_detail", "full_name", "email", "phone",
                   "passport_number", "emergency_contact", "notes", "status",
                   "status_display", "created_at"]
+
+
+class RentalApplicationSerializer(serializers.ModelSerializer):
+    property_name    = serializers.CharField(source="property.name", read_only=True)
+    property_address = serializers.CharField(source="property.address", read_only=True)
+    status_display   = serializers.CharField(source="get_status_display", read_only=True)
+    user_email       = serializers.CharField(source="user.email", read_only=True)
+
+    class Meta:
+        model  = RentalApplication
+        fields = ["id", "user", "user_email", "property", "property_name", "property_address",
+                  "message", "status", "status_display", "created_at"]
 
 
 class ContractSerializer(serializers.ModelSerializer):

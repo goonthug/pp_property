@@ -25,6 +25,25 @@ class Tenant(models.Model):
     def __str__(self): return str(self.user)
 
 
+class RentalApplication(models.Model):
+    """Заявка арендатора на аренду свободного объекта."""
+    class Status(models.TextChoices):
+        PENDING  = "pending",  "На рассмотрении"
+        APPROVED = "approved", "Одобрена"
+        REJECTED = "rejected", "Отклонена"
+
+    user        = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="rental_applications")
+    property    = models.ForeignKey(Property, on_delete=models.CASCADE, related_name="rental_applications")
+    message     = models.TextField(blank=True)
+    status      = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+    created_at  = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name        = "Заявка на аренду"
+        verbose_name_plural = "Заявки на аренду"
+        ordering = ["-created_at"]
+
+
 class Contract(models.Model):
     class Status(models.TextChoices):
         ACTIVE     = "active",     "Активный"

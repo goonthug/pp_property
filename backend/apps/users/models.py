@@ -9,12 +9,13 @@ class Role(models.TextChoices):
 
 
 class User(AbstractUser):
-    email      = models.EmailField(unique=True)
-    role       = models.CharField(max_length=20, choices=Role.choices, default=Role.TENANT)
-    phone      = models.CharField(max_length=20, blank=True)
-    avatar     = models.ImageField(upload_to="avatars/", blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    email         = models.EmailField(unique=True)
+    role          = models.CharField(max_length=20, choices=Role.choices, default=Role.TENANT)
+    phone         = models.CharField(max_length=20, blank=True)
+    avatar        = models.ImageField(upload_to="avatars/", blank=True, null=True)
+    block_reason  = models.TextField(blank=True, verbose_name="Причина блокировки")
+    created_at    = models.DateTimeField(auto_now_add=True)
+    updated_at    = models.DateTimeField(auto_now=True)
 
     USERNAME_FIELD  = "email"
     REQUIRED_FIELDS = ["username"]
