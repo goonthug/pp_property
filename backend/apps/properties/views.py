@@ -1,3 +1,5 @@
+from django.db.models import Exists, OuterRef
+from django.utils import timezone
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
@@ -8,6 +10,7 @@ from .models import Property, PropertyType, Amenity
 from .serializers import PropertySerializer, PropertyTypeSerializer, AmenitySerializer
 from apps.users.permissions import IsAdminOrManager
 from apps.audit.mixins import AuditMixin
+from apps.tenants.models import Contract
 
 
 class PropertyFilter(django_filters.FilterSet):
@@ -28,6 +31,19 @@ class PropertyViewSet(AuditMixin, viewsets.ModelViewSet):
     filterset_class  = PropertyFilter
     search_fields    = ["name", "address", "description"]
     ordering_fields  = ["monthly_rent", "area", "created_at"]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        if self.request.user.role in ("admin", "manager") and self.action in ("list", "retrieve"):
+            today = timezone.now().date()
+            active_contract = Contract.objects.filter(
+                property=OuterRef("pk"),
+                status=Contract.Status.ACTIVE,
+                start_date__lte=today,
+                end_date__gte=today,
+            )
+            qs = qs.annotate(has_active_contract=Exists(active_contract))
+        return qs
 
     def get_permissions(self):
         if self.action in ["list", "retrieve"]:

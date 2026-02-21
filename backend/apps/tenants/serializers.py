@@ -26,8 +26,33 @@ class RentalApplicationSerializer(serializers.ModelSerializer):
     class Meta:
         model  = RentalApplication
         fields = ["id", "user", "user_email", "property", "property_name", "property_address",
-                  "message", "status", "status_display", "rejection_reason", "created_at"]
+                  "message", "desired_start", "desired_end", "status", "status_display",
+                  "rejection_reason", "created_at"]
         read_only_fields = ["user"]
+
+    def validate(self, attrs):
+        if self.instance:
+            return attrs
+        property_obj = attrs.get("property")
+        start = attrs.get("desired_start")
+        end = attrs.get("desired_end")
+        if not start or not end:
+            raise serializers.ValidationError(
+                {"desired_start": "Укажите желаемый период аренды (дата начала и окончания)."}
+            )
+        if end <= start:
+            raise serializers.ValidationError(
+                {"desired_end": "Дата окончания должна быть позже даты начала."}
+            )
+        overlap = Contract.objects.filter(
+            property=property_obj,
+            status=Contract.Status.ACTIVE,
+        ).filter(start_date__lt=end, end_date__gt=start).exists()
+        if overlap:
+            raise serializers.ValidationError(
+                {"property": "На выбранный период объект уже занят. Выберите другие даты или другой объект."}
+            )
+        return attrs
 
 
 class ContractSerializer(serializers.ModelSerializer):

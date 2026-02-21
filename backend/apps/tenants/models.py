@@ -35,6 +35,8 @@ class RentalApplication(models.Model):
     user        = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="rental_applications")
     property    = models.ForeignKey(Property, on_delete=models.CASCADE, related_name="rental_applications")
     message          = models.TextField(blank=True)
+    desired_start    = models.DateField(null=True, blank=True, verbose_name="Желаемая дата начала")
+    desired_end      = models.DateField(null=True, blank=True, verbose_name="Желаемая дата окончания")
     status           = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     rejection_reason = models.TextField(blank=True, verbose_name="Причина отклонения")
     created_at       = models.DateTimeField(auto_now_add=True)
