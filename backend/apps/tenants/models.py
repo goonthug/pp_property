@@ -3,13 +3,18 @@ from django.conf import settings
 from apps.properties.models import Property
 
 
+class TenantStatus(models.TextChoices):
+    ACTIVE = "active", "Активный"
+    INACTIVE = "inactive", "Неактивный"
+
+
 class Tenant(models.Model):
     user              = models.OneToOneField(settings.AUTH_USER_MODEL,
                             on_delete=models.CASCADE, related_name="tenant_profile")
     passport_number   = models.CharField(max_length=50, blank=True)
     emergency_contact = models.CharField(max_length=200, blank=True)
     notes             = models.TextField(blank=True)
-    status            = models.CharField(max_length=20, default="active")
+    status            = models.CharField(max_length=20, choices=TenantStatus.choices, default=TenantStatus.ACTIVE)
     created_at        = models.DateTimeField(auto_now_add=True)
 
     class Meta:

@@ -20,7 +20,12 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    # Ваши приложения с полным путем
+    'rest_framework',
+    'rest_framework_simplejwt.token_blacklist',
+    'django_filters',
+    'corsheaders',
+    'drf_spectacular',
+
     'apps.users',
     'apps.properties',
     'apps.tenants',

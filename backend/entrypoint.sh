@@ -2,7 +2,7 @@
 set -e
 
 echo "Ждём базу данных..."
-until pg_isready -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER"; do
+until pg_isready -h "${POSTGRES_HOST:-db}" -p "${POSTGRES_PORT:-5432}" -U "$POSTGRES_USER"; do
   sleep 1
 done
 echo "БД готова!"

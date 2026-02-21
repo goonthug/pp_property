@@ -3,9 +3,9 @@ from rest_framework.routers import DefaultRouter
 from . import views
 
 router = DefaultRouter()
-router.register(r"",               views.ServiceRequestViewSet, basename="request")
-router.register(r"comments/list",  views.RequestCommentViewSet, basename="comment")
-router.register(r"categories/list", views.RequestCategoryViewSet, basename="req-cat")
+router.register(r"categories", views.RequestCategoryViewSet, basename="req-cat")
+router.register(r"comments",   views.RequestCommentViewSet, basename="comment")
+router.register(r"",          views.ServiceRequestViewSet, basename="request")
 
 urlpatterns = [path("", include(router.urls))]
 
