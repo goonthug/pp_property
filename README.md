@@ -80,7 +80,7 @@
   ./start.sh
   ```
 
-Требования: установленные [Docker](https://docs.docker.com/get-docker/) и Docker Compose (входит в Docker Desktop; в Linux может понадобиться плагин `docker compose`). После запуска подождите 30–60 секунд, затем откройте:
+Требования: установленные [Docker](https://docs.docker.com/get-docker/) и Docker Compose (входит в Docker Desktop; в Linux может понадобиться плагин `docker compose`). При сборке автоматически устанавливаются все зависимости фронта (в т.ч. для toast-уведомлений — `react-toastify`). После запуска подождите 30–60 секунд, затем откройте:
 - **Фронтенд:** http://localhost:3000  
 - **API (документация):** http://localhost:8000/api/docs/
 

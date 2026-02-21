@@ -25,7 +25,7 @@ if ! docker info &>/dev/null; then
   exit 1
 fi
 
-echo "Запуск контейнеров (сборка при первом запуске)..."
+echo "Запуск контейнеров (сборка при первом запуске; в т.ч. установка npm-зависимостей фронта, включая react-toastify)..."
 docker compose up --build -d
 
 echo ""

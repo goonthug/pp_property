@@ -1,3 +1,4 @@
+from datetime import date, timedelta
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
@@ -7,6 +8,7 @@ from .models import Tenant, Contract, RentalApplication
 from .serializers import TenantSerializer, ContractSerializer, RentalApplicationSerializer
 from apps.users.permissions import IsAdminOrManager
 from apps.audit.mixins import AuditMixin
+from apps.properties.models import Property
 
 
 class TenantViewSet(AuditMixin, viewsets.ModelViewSet):
@@ -62,3 +64,25 @@ class RentalApplicationViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+    def perform_update(self, serializer):
+        instance = serializer.instance
+        old_status = instance.status
+        serializer.save()
+        new_status = serializer.instance.status
+        if new_status == RentalApplication.Status.APPROVED and old_status != RentalApplication.Status.APPROVED:
+            app = serializer.instance
+            tenant, _ = Tenant.objects.get_or_create(user=app.user, defaults={"status": "active"})
+            if not Contract.objects.filter(tenant=tenant, property=app.property, status=Contract.Status.ACTIVE).exists():
+                start = date.today()
+                end = start + timedelta(days=365)
+                Contract.objects.create(
+                    tenant=tenant,
+                    property=app.property,
+                    start_date=start,
+                    end_date=end,
+                    monthly_rent=app.property.monthly_rent,
+                    status=Contract.Status.ACTIVE,
+                )
+                app.property.status = Property.Status.RENTED
+                app.property.save(update_fields=["status"])

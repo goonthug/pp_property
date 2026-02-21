@@ -26,7 +26,7 @@ if errorlevel 1 (
   exit /b 1
 )
 
-echo Запуск контейнеров...
+echo Запуск контейнеров (сборка: npm-зависимости фронта, в т.ч. react-toastify)...
 docker compose up --build -d
 
 echo.
