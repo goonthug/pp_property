@@ -26,7 +26,8 @@ class RentalApplicationSerializer(serializers.ModelSerializer):
     class Meta:
         model  = RentalApplication
         fields = ["id", "user", "user_email", "property", "property_name", "property_address",
-                  "message", "status", "status_display", "created_at"]
+                  "message", "status", "status_display", "rejection_reason", "created_at"]
+        read_only_fields = ["user"]
 
 
 class ContractSerializer(serializers.ModelSerializer):

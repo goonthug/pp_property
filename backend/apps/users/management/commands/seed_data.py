@@ -96,6 +96,15 @@ class Command(BaseCommand):
                     due_date=date(2025, month, 10),
                     paid_date=date(2025, month, 9) if is_paid else None,
                     period_month=month, period_year=2025)
+            # Платежи за 2026 год (январь - июнь)
+            for month in range(1, 7):
+                is_paid = month <= 2
+                Payment.objects.create(
+                    contract=contract, category=rent_cat, amount=prop.monthly_rent,
+                    status="paid" if is_paid else "pending",
+                    due_date=date(2026, month, 10),
+                    paid_date=date(2026, month, 9) if is_paid else None,
+                    period_month=month, period_year=2026)
 
         # Категории заявок
         cats = [RequestCategory.objects.create(name=n)

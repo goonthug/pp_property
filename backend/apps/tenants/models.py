@@ -34,9 +34,10 @@ class RentalApplication(models.Model):
 
     user        = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="rental_applications")
     property    = models.ForeignKey(Property, on_delete=models.CASCADE, related_name="rental_applications")
-    message     = models.TextField(blank=True)
-    status      = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
-    created_at  = models.DateTimeField(auto_now_add=True)
+    message          = models.TextField(blank=True)
+    status           = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+    rejection_reason = models.TextField(blank=True, verbose_name="Причина отклонения")
+    created_at       = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         verbose_name        = "Заявка на аренду"

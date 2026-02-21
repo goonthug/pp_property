@@ -14,12 +14,15 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         return token
 
     def validate(self, attrs):
-        data = super().validate(attrs)
-        if not self.user.is_active:
-            reason = getattr(self.user, "block_reason", None) or "Аккаунт заблокирован администратором."
-            from rest_framework.exceptions import ValidationError
-            raise ValidationError({"detail": reason})
-        return data
+        from rest_framework.exceptions import ValidationError
+        from .models import User as UserModel
+        email = attrs.get("email")
+        if email:
+            user = UserModel.objects.filter(email=email).first()
+            if user and not user.is_active:
+                reason = (getattr(user, "block_reason", None) or "").strip() or "Аккаунт заблокирован администратором."
+                raise ValidationError({"detail": reason, "block_reason": reason})
+        return super().validate(attrs)
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -36,6 +39,21 @@ class UserSerializer(serializers.ModelSerializer):
         return obj.get_full_name() or obj.email
 
 
+def validate_phone_value(value):
+    if not value or not value.strip():
+        return ""
+    digits = "".join(c for c in value if c.isdigit())
+    if not digits:
+        raise serializers.ValidationError("Телефон: только цифры и формат +7.")
+    if digits[0] == "8":
+        digits = "7" + digits[1:]
+    if len(digits) > 11:
+        digits = digits[:11]
+    if len(digits) != 11 or digits[0] != "7":
+        raise serializers.ValidationError("Телефон: +7 и 10 цифр (например +7 999 123-45-67).")
+    return "+7" + digits[1:]
+
+
 class UserCreateSerializer(serializers.ModelSerializer):
     password  = serializers.CharField(write_only=True, validators=[validate_password])
     password2 = serializers.CharField(write_only=True)
@@ -44,6 +62,9 @@ class UserCreateSerializer(serializers.ModelSerializer):
         model  = User
         fields = ["email", "username", "first_name", "last_name",
                   "password", "password2", "role", "phone"]
+
+    def validate_phone(self, value):
+        return validate_phone_value(value)
 
     def validate(self, attrs):
         if attrs["password"] != attrs.pop("password2"):
@@ -73,4 +94,7 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model  = User
         fields = ["first_name", "last_name", "phone", "avatar"]
+
+    def validate_phone(self, value):
+        return validate_phone_value(value)
 
